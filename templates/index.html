@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gitleaks MCP Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .model-select, .tool-button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .model-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tool-button {
+            background: #f8f9fa;
+            text-align: left;
+            color: #333;
+            font-weight: 500;
+            text-transform: capitalize;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tool-button:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .tool-button:active {
+            transform: translateY(0);
+        }
+
+        .settings-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #667eea;
+            font-weight: 600;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .settings-button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            margin: 0;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-button:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .repo-type-option {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .repo-type-option:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .repo-type-option.selected {
+            border-color: #667eea;
+            background: #e8eaf6;
+        }
+
+        .repo-type-option input[type="radio"] {
+            width: auto;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-test {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-test:hover {
+            background: #45a049;
+        }
+
+        .connection-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .connection-status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .connection-status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 12px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .message.system .message-content {
+            background: #fff3cd;
+            color: #856404;
+            max-width: 100%;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .send-button {
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .send-button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        /* Scan Results Styling */
+        .scan-result {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+
+        .scan-result h3 {
+            color: #667eea;
+            margin: 0 0 15px 0;
+            font-size: 1.3rem;
+        }
+
+        .scan-result h4 {
+            color: #e74c3c;
+            margin: 20px 0 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .scan-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .findings-list {
+            margin-top: 15px;
+        }
+
+        .finding-item {
+            background: white;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .finding-number {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .finding-rule {
+            background: #fff3cd;
+            color: #856404;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .finding-description {
+            color: #666;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .finding-location {
+            background: #e8f4f8;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .finding-secret {
+            background: #fff5f5;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            color: #c53030;
+        }
+
+        .finding-secret code {
+            background: #ffe5e5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .finding-commit {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .finding-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .finding-tags .tag {
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .no-findings {
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .scan-footer {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8f4f8;
+            border-radius: 6px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #4caf50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            display: flex;
+            gap: 5px;
+            padding: 15px;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        code {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="settings-button" id="settingsButton">⚙️ Settings</button>
+            <h1>🔐 Gitleaks MCP Portal</h1>
+            <p>AI-powered secrets detection with Ollama</p>
+        </div>
+
+        <div class="main-grid">
+            <div class="sidebar">
+                <div class="status">
+                    <div class="status-dot"></div>
+                    <span>Server Running</span>
+                </div>
+
+                <h3>Select Model</h3>
+                <select class="model-select" id="modelSelect">
+                    <option value="">Loading models...</option>
+                </select>
+                <button class="tool-button" id="refreshModels" style="background: #e3f2fd; color: #1976d2; font-size: 12px; padding: 8px;">
+                    🔄 Refresh Models
+                </button>
+
+                <h3 style="margin-top: 20px;">Quick Actions</h3>
+                <div id="toolButtons"></div>
+
+                <h3 style="margin-top: 20px;">Quick Scan</h3>
+                <button class="tool-button" id="quickScanButton" style="background: #667eea; color: white;">
+                    📂 Scan Repository
+                </button>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message system">
+                        <div class="message-content">
+                            <strong>Welcome to Gitleaks MCP Portal!</strong><br>
+                            Ask me to scan repositories, check code for secrets, or use any of the quick actions on the left.
+                            <br><br>
+                            <strong>📁 How to define git repository:</strong><br>
+                            • Provide the absolute path in your prompt: <code>/Users/username/code/my-project</code><br>
+                            • For Docker: Mount repos with <code>-v /path/to/repos:/repos:ro</code> then use <code>/repos/my-project</code><br>
+                            • The path must point to a directory containing a <code>.git</code> folder
+                            <br><br>
+                            <strong>Example prompts:</strong><br>
+                            • "Scan the repository at /Users/B0024335/code/my-project"<br>
+                            • "Check this code for secrets: [paste code]"<br>
+                            • "List all active scans"<br>
+                            • "Scan directory at /path/to/folder" (for non-git folders)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <textarea 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Ask me to scan for secrets, analyze code, or use MCP tools..."
+                        rows="3"
+                    ></textarea>
+                    <button class="send-button" id="sendButton">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Configuration</h2>
+                <button class="close-button" id="closeSettings">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Ollama Host</label>
+                <input type="text" id="ollamaHost" placeholder="http://localhost:11434">
+            </div>
+            
+            <div class="form-group">
+                <label>Default Model</label>
+                <input type="text" id="defaultModel" placeholder="llama3.2">
+            </div>
+            
+            <div id="connectionStatus"></div>
+            
+            <div class="form-actions">
+                <button class="btn btn-test" id="testConnection">Test Connection</button>
+                <button class="btn btn-secondary" id="cancelSettings">Cancel</button>
+                <button class="btn btn-primary" id="saveSettings">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Repository Modal -->
+    <div class="modal" id="scanModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📂 Scan Repository</h2>
+                <button class="close-button" id="closeScan">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Repository Type</label>
+                <div class="repo-type-option selected" data-type="local">
+                    <input type="radio" name="repoType" value="local" checked>
+                    <div>
+                        <strong>💻 Local Repository</strong><br>
+                        <small>Scan a git repository on your local machine</small>
+                    </div>
+                </div>
+                <div class="repo-type-option" data-type="github">
+                    <input type="radio" name="repoType" value="github">
+                    <div>
+                        <strong>🐙 GitHub Repository</strong><br>
+                        <small>Clone and scan a GitHub repository</small>
+                    </div>
+                </div>
+                <div class="repo-type-option" data-type="bitbucket">
+                    <input type="radio" name="repoType" value="bitbucket">
+                    <div>
+                        <strong>🪣 Bitbucket Repository</strong><br>
+                        <small>Clone and scan a Bitbucket repository</small>
+                    </div>
+                </div>
+                <div class="repo-type-option" data-type="generic">
+                    <input type="radio" name="repoType" value="generic">
+                    <div>
+                        <strong>🌐 Generic Git Repository</strong><br>
+                        <small>Clone from any git URL</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local Repository Form -->
+            <div id="localRepoForm">
+                <div class="form-group">
+                    <label>Repository Path</label>
+                    <input type="text" id="localRepoPath" placeholder="/Users/username/code/my-project">
+                    <small style="color: #666; margin-top: 5px; display: block;">Absolute path to a directory containing .git folder</small>
+                </div>
+            </div>
+
+            <!-- Remote Repository Form -->
+            <div id="remoteRepoForm" class="hidden">
+                <div class="form-group">
+                    <label>Repository URL</label>
+                    <input type="text" id="remoteRepoUrl" placeholder="https://github.com/username/repo.git">
+                    <small style="color: #666; margin-top: 5px; display: block;">Git clone URL (HTTPS or SSH)</small>
+                </div>
+                <div class="form-group">
+                    <label>Authentication Token (Optional)</label>
+                    <input type="password" id="authToken" placeholder="ghp_xxxxx or personal access token">
+                    <small style="color: #666; margin-top: 5px; display: block;">Required for private repositories</small>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Timeout (seconds)</label>
+                <input type="number" id="scanTimeout" value="300" min="60" max="1800">
+            </div>
+            
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelScan">Cancel</button>
+                <button class="btn btn-primary" id="startScan">Start Scan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const modelSelect = document.getElementById('modelSelect');
+        const toolButtons = document.getElementById('toolButtons');
+
+        let conversationHistory = [];
+        let currentDefaultModel = 'llama3.2';
+
+        // Load available models
+        async function loadModels() {
+            try {
+                const response = await fetch('/api/models');
+                const data = await response.json();
+                
+                if (data.success && data.models.length > 0) {
+                    currentDefaultModel = data.default || data.models[0];
+                    
+                    modelSelect.innerHTML = data.models.map(m => {
+                        const selected = m === currentDefaultModel ? 'selected' : '';
+                        return `<option value="${m}" ${selected}>${m}</option>`;
+                    }).join('');
+                    
+                    // Update status message
+                    const statusMsg = document.querySelector('.status span');
+                    statusMsg.textContent = `Connected to Ollama (${data.models.length} models)`;
+                } else {
+                    console.error('Failed to load models:', data.error);
+                    addMessage('system', `⚠️ ${data.message || data.error}`);
+                }
+            } catch (error) {
+                console.error('Error loading models:', error);
+                addMessage('system', '⚠️ Could not connect to Ollama. Make sure it\'s running: ollama serve');
+            }
+        }
+        
+        loadModels();
+
+        // Load available tools
+        fetch('/api/tools')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    data.tools.forEach(tool => {
+                        const button = document.createElement('button');
+                        button.className = 'tool-button';
+                        
+                        // Add icon based on tool name
+                        let icon = '🔧';
+                        if (tool.name.includes('scan_repo')) icon = '📂';
+                        else if (tool.name.includes('scan_dir')) icon = '📁';
+                        else if (tool.name.includes('detect')) icon = '🔍';
+                        else if (tool.name.includes('results')) icon = '📊';
+                        else if (tool.name.includes('list')) icon = '📋';
+                        
+                        button.innerHTML = `${icon} ${tool.name.replace('gitleaks_', '').replace(/_/g, ' ')}`;
+                        button.title = tool.description;
+                        button.dataset.toolName = tool.name;
+                        button.dataset.toolSchema = JSON.stringify(tool.schema);
+                        
+                        button.onclick = () => {
+                            openQuickScanForTool(tool);
+                        };
+                        toolButtons.appendChild(button);
+                    });
+                }
+            });
+
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Format code blocks and JSON - enhanced for scan results
+            let formattedContent = content;
+            if (content.includes('{') || content.includes('[')) {
+                try {
+                    const jsonMatch = content.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                    if (jsonMatch) {
+                        const json = JSON.parse(jsonMatch[0]);
+                        
+                        // Check if this is a scan result
+                        if (json.scan_id && json.findings) {
+                            formattedContent = formatScanResult(json);
+                        } else {
+                            formattedContent = content.replace(jsonMatch[0], 
+                                `<pre><code>${JSON.stringify(json, null, 2)}</code></pre>`
+                            );
+                        }
+                    }
+                } catch (e) {
+                    // Not valid JSON, keep original
+                }
+            }
+            
+            contentDiv.innerHTML = formattedContent.replace(/\n/g, '<br>');
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function formatScanResult(result) {
+            let html = `<div class="scan-result">`;
+            html += `<h3>🔍 Scan Results: ${result.scan_id}</h3>`;
+            html += `<div class="scan-info">`;
+            html += `<strong>Target:</strong> ${result.target}<br>`;
+            html += `<strong>Status:</strong> ${result.status}<br>`;
+            html += `<strong>Total Findings:</strong> ${result.stats.total_findings || 0}<br>`;
+            html += `</div>`;
+            
+            if (result.findings && result.findings.length > 0) {
+                html += `<div class="findings-list">`;
+                html += `<h4>⚠️ Secrets Detected:</h4>`;
+                
+                result.findings.forEach((finding, index) => {
+                    html += `<div class="finding-item">`;
+                    html += `<div class="finding-header">`;
+                    html += `<span class="finding-number">#${index + 1}</span>`;
+                    html += `<span class="finding-rule">${finding.rule_id}</span>`;
+                    html += `</div>`;
+                    
+                    if (finding.description) {
+                        html += `<div class="finding-description">${finding.description}</div>`;
+                    }
+                    
+                    html += `<div class="finding-location">`;
+                    html += `📍 <strong>Location:</strong> ${finding.location}`;
+                    html += `</div>`;
+                    
+                    if (finding.secret) {
+                        html += `<div class="finding-secret">`;
+                        html += `🔑 <strong>Secret:</strong> <code>${finding.secret}</code>`;
+                        html += `</div>`;
+                    }
+                    
+                    if (finding.commit) {
+                        html += `<div class="finding-commit">`;
+                        html += `📝 <strong>Commit:</strong> ${finding.commit}`;
+                        if (finding.author) html += ` by ${finding.author}`;
+                        html += `</div>`;
+                    }
+                    
+                    if (finding.tags && finding.tags.length > 0) {
+                        html += `<div class="finding-tags">`;
+                        finding.tags.forEach(tag => {
+                            html += `<span class="tag">${tag}</span>`;
+                        });
+                        html += `</div>`;
+                    }
+                    
+                    html += `</div>`;
+                });
+                
+                html += `</div>`;
+                
+                if (result.showing) {
+                    html += `<div class="scan-footer">${result.showing}</div>`;
+                }
+            } else {
+                html += `<div class="no-findings">✅ No secrets found!</div>`;
+            }
+            
+            html += `</div>`;
+            return html;
+        }
+
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant';
+            loadingDiv.id = 'loading';
+            loadingDiv.innerHTML = `
+                <div class="message-content loading">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+            `;
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) loading.remove();
+        }
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            const model = modelSelect.value;
+
+            // Add user message
+            addMessage('user', message);
+            chatInput.value = '';
+            sendButton.disabled = true;
+            showLoading();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message,
+                        model,
+                        history: conversationHistory
+                    })
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    addMessage('assistant', data.response);
+                    conversationHistory = data.history;
+                } else {
+                    addMessage('system', `Error: ${data.error}`);
+                }
+            } catch (error) {
+                hideLoading();
+                addMessage('system', `Error: ${error.message}`);
+            }
+
+            sendButton.disabled = false;
+            chatInput.focus();
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Settings modal
+        const settingsModal = document.getElementById('settingsModal');
+        const settingsButton = document.getElementById('settingsButton');
+        const closeSettings = document.getElementById('closeSettings');
+        const cancelSettings = document.getElementById('cancelSettings');
+        const saveSettings = document.getElementById('saveSettings');
+        const testConnection = document.getElementById('testConnection');
+        const ollamaHost = document.getElementById('ollamaHost');
+        const defaultModelInput = document.getElementById('defaultModel');
+        const connectionStatus = document.getElementById('connectionStatus');
+
+        // Load current config
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+                if (data.success) {
+                    ollamaHost.value = data.ollama_host;
+                    defaultModelInput.value = data.ollama_default_model;
+                }
+            } catch (error) {
+                console.error('Failed to load config:', error);
+            }
+        }
+
+        settingsButton.addEventListener('click', () => {
+            loadConfig();
+            settingsModal.classList.add('active');
+        });
+
+        closeSettings.addEventListener('click', () => {
+            settingsModal.classList.remove('active');
+            connectionStatus.innerHTML = '';
+        });
+
+        cancelSettings.addEventListener('click', () => {
+            settingsModal.classList.remove('active');
+            connectionStatus.innerHTML = '';
+        });
+
+        testConnection.addEventListener('click', async () => {
+            const host = ollamaHost.value.trim();
+            testConnection.disabled = true;
+            testConnection.textContent = 'Testing...';
+            connectionStatus.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/test-ollama', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    connectionStatus.className = 'connection-status success';
+                    connectionStatus.textContent = `✅ ${data.message} - Found ${data.models_count} models`;
+                } else {
+                    connectionStatus.className = 'connection-status error';
+                    connectionStatus.textContent = `❌ ${data.message}`;
+                }
+            } catch (error) {
+                connectionStatus.className = 'connection-status error';
+                connectionStatus.textContent = `❌ Connection failed: ${error.message}`;
+            }
+
+            testConnection.disabled = false;
+            testConnection.textContent = 'Test Connection';
+        });
+
+        saveSettings.addEventListener('click', async () => {
+            saveSettings.disabled = true;
+            saveSettings.textContent = 'Saving...';
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ollama_host: ollamaHost.value.trim(),
+                        ollama_default_model: defaultModelInput.value.trim()
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    connectionStatus.className = 'connection-status success';
+                    connectionStatus.textContent = '✅ Configuration saved! Refreshing models...';
+                    
+                    // Refresh models
+                    await loadModels();
+                    
+                    // Update status message
+                    document.querySelector('.status span').textContent = 'Configuration Updated';
+                    
+                    setTimeout(() => {
+                        settingsModal.classList.remove('active');
+                        connectionStatus.innerHTML = '';
+                    }, 2000);
+                } else {
+                    connectionStatus.className = 'connection-status error';
+                    connectionStatus.textContent = `❌ ${data.error}`;
+                }
+            } catch (error) {
+                connectionStatus.className = 'connection-status error';
+                connectionStatus.textContent = `❌ Failed to save: ${error.message}`;
+            }
+
+            saveSettings.disabled = false;
+            saveSettings.textContent = 'Save';
+        });
+
+        // Refresh models button
+        document.getElementById('refreshModels').addEventListener('click', async () => {
+            const btn = document.getElementById('refreshModels');
+            btn.disabled = true;
+            btn.textContent = '🔄 Refreshing...';
+            await loadModels();
+            btn.disabled = false;
+            btn.textContent = '🔄 Refresh Models';
+        });
+
+        // Scan Repository Modal
+        const scanModal = document.getElementById('scanModal');
+        const quickScanButton = document.getElementById('quickScanButton');
+        const closeScan = document.getElementById('closeScan');
+        const cancelScan = document.getElementById('cancelScan');
+        const startScan = document.getElementById('startScan');
+        const repoTypeOptions = document.querySelectorAll('.repo-type-option');
+        const localRepoForm = document.getElementById('localRepoForm');
+        const remoteRepoForm = document.getElementById('remoteRepoForm');
+
+        quickScanButton.addEventListener('click', () => {
+            scanModal.classList.add('active');
+        });
+
+        closeScan.addEventListener('click', () => {
+            scanModal.classList.remove('active');
+        });
+
+        cancelScan.addEventListener('click', () => {
+            scanModal.classList.remove('active');
+        });
+
+        // Handle repository type selection
+        repoTypeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Update selected state
+                repoTypeOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                // Check the radio button
+                const radio = option.querySelector('input[type="radio"]');
+                radio.checked = true;
+                
+                // Show/hide appropriate form
+                const repoType = option.dataset.type;
+                if (repoType === 'local') {
+                    localRepoForm.classList.remove('hidden');
+                    remoteRepoForm.classList.add('hidden');
+                } else {
+                    localRepoForm.classList.add('hidden');
+                    remoteRepoForm.classList.remove('hidden');
+                    
+                    // Update placeholder based on type
+                    const urlInput = document.getElementById('remoteRepoUrl');
+                    if (repoType === 'github') {
+                        urlInput.placeholder = 'https://github.com/username/repo.git';
+                    } else if (repoType === 'bitbucket') {
+                        urlInput.placeholder = 'https://bitbucket.org/username/repo.git';
+                    } else {
+                        urlInput.placeholder = 'https://your-git-server.com/repo.git';
+                    }
+                }
+            });
+        });
+
+        // Handle scan start
+        startScan.addEventListener('click', async () => {
+            const repoType = document.querySelector('input[name="repoType"]:checked').value;
+            const timeout = document.getElementById('scanTimeout').value;
+            
+            let prompt = '';
+            
+            if (repoType === 'local') {
+                const path = document.getElementById('localRepoPath').value.trim();
+                if (!path) {
+                    alert('Please enter a repository path');
+                    return;
+                }
+                prompt = `Scan the local git repository at ${path} with timeout ${timeout} seconds`;
+            } else {
+                const url = document.getElementById('remoteRepoUrl').value.trim();
+                const token = document.getElementById('authToken').value.trim();
+                
+                if (!url) {
+                    alert('Please enter a repository URL');
+                    return;
+                }
+                
+                if (token) {
+                    prompt = `Clone and scan the remote git repository at ${url} using authentication token with timeout ${timeout} seconds. Use the gitleaks_scan_remote_repo tool.`;
+                } else {
+                    prompt = `Clone and scan the public remote git repository at ${url} with timeout ${timeout} seconds. Use the gitleaks_scan_remote_repo tool.`;
+                }
+            }
+            
+            // Close modal
+            scanModal.classList.remove('active');
+            
+            // Add message and send
+            chatInput.value = prompt;
+            sendButton.click();
+        });
+
+        // Function to open quick scan for specific tool
+        function openQuickScanForTool(tool) {
+            const toolName = tool.name;
+            
+            // Handle different tools
+            if (toolName === 'gitleaks_scan_repo' || toolName === 'gitleaks_scan_remote_repo') {
+                // Open the repository scan modal
+                scanModal.classList.add('active');
+                
+                // Pre-select the appropriate type
+                if (toolName === 'gitleaks_scan_remote_repo') {
+                    document.querySelector('input[name="repoType"][value="github"]').click();
+                } else {
+                    document.querySelector('input[name="repoType"][value="local"]').click();
+                }
+            } else if (toolName === 'gitleaks_scan_dir') {
+                const path = prompt('Enter directory path to scan:');
+                if (path) {
+                    chatInput.value = `Scan the directory at ${path} for secrets using gitleaks_scan_dir`;
+                    sendButton.click();
+                }
+            } else if (toolName === 'gitleaks_detect') {
+                const content = prompt('Enter or paste content to scan for secrets:');
+                if (content) {
+                    chatInput.value = `Check this content for secrets:\n\n${content}`;
+                    sendButton.click();
+                }
+            } else if (toolName === 'get_scan_results') {
+                const scanId = prompt('Enter scan ID (or leave empty for all results):');
+                if (scanId !== null) {
+                    if (scanId.trim()) {
+                        chatInput.value = `Get the results for scan ID ${scanId}`;
+                    } else {
+                        chatInput.value = `Show all scan results`;
+                    }
+                    sendButton.click();
+                }
+            } else if (toolName === 'list_active_scans') {
+                chatInput.value = 'List all active scans';
+                sendButton.click();
+            } else {
+                // Fallback: use the tool with chat
+                chatInput.value = `Use ${toolName} to ${tool.description.toLowerCase()}`;
+                chatInput.focus();
+            }
+        }
+
+        // Focus input on load
+        chatInput.focus();
+    </script>
+</body>
+</html>
+
